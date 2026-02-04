@@ -10,11 +10,6 @@
 #define	AUTHOR	"Mike Lovell"
 #define YEAR	((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
 
-#ifdef WIN32
-	#define close	closesocket
-	#define snprintf _snprintf
-#endif
-
 // Error codes
 #define	SUCCESS						0
 #define	ERROR_POUTOFMEMORY			100
@@ -22,7 +17,6 @@
 #define	ERROR_SOCKET_TIMEOUT		102
 #define	ERROR_SOCKET_GENERALFAILURE	103
 #define	ERROR_INVALIDARGUMENTS		200
-
 
 #include <iostream>
 #include <string.h>
@@ -47,6 +41,13 @@
 
 #include <sys/types.h>
 #include <fcntl.h>
+
+// Windows compatibility macros (after including system headers)
+#ifdef WIN32
+	#define close	closesocket
+	#define snprintf _snprintf
+#endif
+
 
 // Types
 typedef	const		wchar_t*	pcw_t;

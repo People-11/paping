@@ -52,8 +52,15 @@ int	arguments_c::Process(int argc, pc_t argv[], arguments_c &arguments)
 		{
 			if (!gotDestination)
 			{
-				gotDestination			= true;
-				arguments.Destination	= argv[i];
+				gotDestination = true;
+				pc_t destination = argv[i];
+				pc_t colonPos = strchr(destination, ':');
+				if (colonPos != NULL && arguments.Port == 0)
+				{
+					*const_cast<char*>(colonPos) = '\0';
+					arguments.Port = atoi(colonPos + 1);
+				}
+				arguments.Destination = destination;
 			}
 			else
 			{
