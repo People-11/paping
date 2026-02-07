@@ -1,6 +1,6 @@
 #include "standard.h"
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 int socket_c::Resolve(pcc_t hostname, host_c &host)
 {

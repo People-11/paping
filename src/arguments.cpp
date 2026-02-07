@@ -1,18 +1,18 @@
 #include "standard.h"
 
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 
 void arguments_c::PrintBanner()
 {
-	cout << "paping v" << VERSION << " - Copyright (c) " << YEAR << " " << AUTHOR << endl << endl;
+	printf("paping v%s - Copyright (c) %d %s\n\n", VERSION, YEAR, AUTHOR);
 }
 
 
 void arguments_c::PrintUsage()
 {
-	cout << i18n_c::GetString(STRING_USAGE) << endl;
+	printf("%s\n", i18n_c::GetString(STRING_USAGE));
 }
 
 
@@ -34,9 +34,9 @@ int	arguments_c::Process(int argc, pc_t argv[], arguments_c &arguments)
 	{
 		anyMatch	= false;
 
-		if (result = arguments_c::match(i, argc, argv, "-p", "--port", true, arguments.Port, anyMatch) != SUCCESS) return result;
-		if (result = arguments_c::match(i, argc, argv, "-c", "--count", true, arguments.Count, anyMatch) != SUCCESS) return result;
-		if (result = arguments_c::match(i, argc, argv, "-t", "--timeout", true, arguments.Timeout, anyMatch) != SUCCESS) return result;
+		if ((result = arguments_c::match(i, argc, argv, "-p", "--port", true, arguments.Port, anyMatch)) != SUCCESS) return result;
+		if ((result = arguments_c::match(i, argc, argv, "-c", "--count", true, arguments.Count, anyMatch)) != SUCCESS) return result;
+		if ((result = arguments_c::match(i, argc, argv, "-t", "--timeout", true, arguments.Timeout, anyMatch)) != SUCCESS) return result;
 
 		if (anyMatch)
 		{
@@ -44,7 +44,7 @@ int	arguments_c::Process(int argc, pc_t argv[], arguments_c &arguments)
 			continue;
 		}
 
-		if (result = arguments_c::match(i, argc, argv, NULL, "--nocolor", false, value, anyMatch) != SUCCESS) return result;
+		if ((result = arguments_c::match(i, argc, argv, NULL, "--nocolor", false, value, anyMatch)) != SUCCESS) return result;
 		if (value == 1) arguments.UseColor = false;
 
 

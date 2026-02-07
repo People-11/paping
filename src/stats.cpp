@@ -1,6 +1,6 @@
 #include "standard.h"
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 
 double stats_c::Average()

@@ -1,6 +1,6 @@
 #include "standard.h"
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 
 void printError(int error);
@@ -134,7 +134,7 @@ void printError(int error)
 	else
 		print_c::FormattedPrint(NULL, i18n_c::GetString(error));
 
-	cout << endl;
+	putchar('\n');
 }
 
 
@@ -144,7 +144,8 @@ int printConnectInfo(host_c host)
 
 	length = host.GetConnectInfoString(NULL);
 
-	pc_t	info	= new (nothrow) char[length + 1];
+	// pc_t	info	= new (nothrow) char[length + 1];
+	pc_t info = (pc_t)malloc(length + 1);
 
 	if (info == 0)
 	{
@@ -159,9 +160,9 @@ int printConnectInfo(host_c host)
 	else
 		print_c::FormattedPrint(NULL, info);
 
-	cout << endl << endl;
+	printf("\n\n");
 
-	delete[] info;
+	free(const_cast<char*>(info));
 
 	return SUCCESS;
 }
@@ -173,7 +174,8 @@ int printSuccessfulConnection(host_c host, double time)
 
 	length = host.GetSuccessfulConnectionString(NULL, time);
 
-	pc_t	data	= new (nothrow) char[length + 1];
+	// pc_t	data	= new (nothrow) char[length + 1];
+	pc_t data = (pc_t)malloc(length + 1);
 
 	if (data == 0)
 	{
@@ -188,9 +190,9 @@ int printSuccessfulConnection(host_c host, double time)
 	else
 		print_c::FormattedPrint(NULL, data);
 
-	cout << endl;
+	putchar('\n');
 
-	delete[] data;
+	free(const_cast<char*>(data));
 
 	return SUCCESS;
 }
@@ -202,7 +204,8 @@ int printStats()
 
 	length = stats.GetStatisticsString(NULL);
 
-	pc_t	str	= new (nothrow) char[length + 1];
+	// pc_t	str	= new (nothrow) char[length + 1];
+	pc_t str = (pc_t)malloc(length + 1);
 
 	if (str == 0)
 	{
@@ -217,9 +220,9 @@ int printStats()
 	else
 		print_c::FormattedPrint(NULL, str);
 
-	cout << endl;
+	putchar('\n');
 
-	delete[] str;
+	free(const_cast<char*>(str));
 
 	return SUCCESS;
 }
@@ -232,7 +235,7 @@ int printFailedConnection(int error)
 	else
 		print_c::FormattedPrint(NULL, i18n_c::GetString(error));
 
-	cout << endl;
+	putchar('\n');
 
 	return SUCCESS;
 }

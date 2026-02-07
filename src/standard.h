@@ -18,7 +18,7 @@
 #define	ERROR_SOCKET_GENERALFAILURE	103
 #define	ERROR_INVALIDARGUMENTS		200
 
-#include <iostream>
+// #include <iostream> // Removed c++ new dependency
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>

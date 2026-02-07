@@ -1,7 +1,7 @@
 #include "standard.h"
 
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 
 pcc_t i18n_c::GetString(int id)

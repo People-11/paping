@@ -1,6 +1,6 @@
 #include "standard.h"
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 
 void timer_c::Start()
@@ -17,8 +17,8 @@ double timer_c::Stop()
 
 	gettimeofday(&this->stop_, NULL);
 
-	double	usecStop	= this->stop_.tv_usec + (this->stop_.tv_sec * 1000000);
-	double	usecStart	= this->start_.tv_usec + (this->start_.tv_sec * 1000000);
+	double	usecStop	= this->stop_.tv_usec + ((double)this->stop_.tv_sec * 1000000.0);
+	double	usecStart	= this->start_.tv_usec + ((double)this->start_.tv_sec * 1000000.0);
 
-	return (usecStop - usecStart) /  1000;
+	return (usecStop - usecStart) /  1000.0;
 }

@@ -1,7 +1,7 @@
 #include "standard.h"
 
 
-using namespace std;
+// using namespace std; // Removed iostream dependency
 
 
 int print_c::initialColors_ = 0;
@@ -10,17 +10,18 @@ int print_c::initialColors_ = 0;
 void print_c::FormattedPrint(int color, pcc_t data)
 {
 	slice_s		slices[8];
+	memset(slices, 0, sizeof(slices));
 	pc_t		slice;
 	int			length	= strlen(data);
 
 	bool		began	= true;
 	int			count	= 0;
 
-	slice = new char[length + 1];
+	slice = (pc_t)malloc(length + 1);
 
 	if (slice == NULL)
 	{
-		cerr << "ERROR: OUT OF MEMORY" << endl;
+		fprintf(stderr, "ERROR: OUT OF MEMORY\n");
 		return;
 	}
 
@@ -59,28 +60,31 @@ void print_c::FormattedPrint(int color, pcc_t data)
 		}
 
 		slice[pos] = '\0';
-		cout << slice;
+		printf("%s", slice);
 
 
 		pos = 0;
 
 		if (color != 0) print_c::SetColor(color);
 
-		for (int j = slices[i].End + 1; j < slices[i+1].Begin; j++)
+		if (i < count - 1)
 		{
-			if (j < length)
-				slice[pos++] = data[j];
+			for (int j = slices[i].End + 1; j < slices[i+1].Begin; j++)
+			{
+				if (j < length)
+					slice[pos++] = data[j];
+			}
 		}
 
 		slice[pos] = '\0';
-		cout << slice;
+		printf("%s", slice);
 
 		if (color != 0) print_c::ResetColor();
 	}
 
 	if (color != 0) print_c::ResetColor();
 
-	delete[] slice;
+	free(slice);
 
 	slice = NULL;
 }
@@ -92,13 +96,13 @@ void print_c::SetColor(int color)
 	#ifdef _WIN32
 	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	if (print_c::initialColors_ == NULL)
+	if (print_c::initialColors_ == 0) // Changed NULL to 0 for int
 	{
-		CONSOLE_SCREEN_BUFFER_INFO *bufferInfo = new CONSOLE_SCREEN_BUFFER_INFO();
+		CONSOLE_SCREEN_BUFFER_INFO bufferInfo;
 	
-		GetConsoleScreenBufferInfo(console, bufferInfo);
+		GetConsoleScreenBufferInfo(console, &bufferInfo);
 
-		print_c::initialColors_ = bufferInfo->wAttributes;
+		print_c::initialColors_ = bufferInfo.wAttributes;
 	}
 
 	SetConsoleTextAttribute(console, color);
