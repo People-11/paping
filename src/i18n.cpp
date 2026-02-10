@@ -11,11 +11,16 @@ pcc_t i18n_c::GetString(int id)
 		case STRING_USAGE:						return 	"Syntax: paping [options] destination\n\n"
 														"Options:\n"
 														" -?, --help\tdisplay usage\n"
+#ifdef WIN32
+														" -p, --port N\tset TCP port N\n"
+#else
 														" -p, --port N\tset TCP port N (required)\n"
+#endif
 														//" -p, --port N\tset TCP/UDP port N (required)\n"
 														//"     --tcp\tuse TCP protocol (default)\n"
 														"     --nocolor\tDisable color output\n"
 														" -t, --timeout\ttimeout in milliseconds (default 1000)\n"
+														" -i, --interval N\tinterval between requests in milliseconds (default 1000)\n"
 														" -c, --count N\tset number of checks to N\n";
 
 		case STRING_STATS:						return	"\n"

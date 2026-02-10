@@ -4,6 +4,7 @@
 	#define WIN32_LEAN_AND_MEAN
 	#define _CRT_SECURE_NO_WARNINGS 1
 	#pragma comment(lib, "ws2_32.lib")
+	#pragma comment(lib, "winmm.lib")
 #endif
 
 #define	VERSION	"1.5.5"
@@ -23,11 +24,13 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
+#include <math.h>
 
 #ifdef WIN32	// Windows specific
 	#include <Windows.h>
 	#include <WinSock2.h>
 	#include <time.h>
+	#include <mmsystem.h>
 	#include "gettimeofday.h"
 #else			// Linux specific
 
@@ -63,5 +66,6 @@ typedef	unsigned	short		ushort_t;
 #include "arguments.h"
 #include "host.h"
 #include "socket.h"
+#include "icmp.h"
 
 

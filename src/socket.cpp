@@ -45,6 +45,10 @@ pcc_t socket_c::GetFriendlyTypeName(int type)
 			return "TCP";
 		case IPPROTO_UDP:
 			return "UDP";
+#ifdef WIN32
+		case IPPROTO_ICMP:
+			return "ICMP";
+#endif
 		default:
 			return "UNKNOWN";
 	}

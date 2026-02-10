@@ -27,16 +27,24 @@ int	arguments_c::Process(int argc, pc_t argv[], arguments_c &arguments)
 	arguments.Count		= 0;
 	arguments.Timeout	= 1000;
 	arguments.Type		= IPPROTO_TCP;
+	arguments.Interval	= 1000;
 	arguments.Continous	= true;
 	arguments.UseColor	= true;
+#ifdef WIN32
+	arguments.UseICMP	= false;
+#endif
 
 	for (int i=1; i<argc; i++)
 	{
 		anyMatch	= false;
 
+		if ((result = arguments_c::match(i, argc, argv, "-?", "--help", false, value, anyMatch)) != SUCCESS) return result;
+		if (value == 1) return ERROR_INVALIDARGUMENTS;
+
 		if ((result = arguments_c::match(i, argc, argv, "-p", "--port", true, arguments.Port, anyMatch)) != SUCCESS) return result;
 		if ((result = arguments_c::match(i, argc, argv, "-c", "--count", true, arguments.Count, anyMatch)) != SUCCESS) return result;
 		if ((result = arguments_c::match(i, argc, argv, "-t", "--timeout", true, arguments.Timeout, anyMatch)) != SUCCESS) return result;
+		if ((result = arguments_c::match(i, argc, argv, "-i", "--interval", true, arguments.Interval, anyMatch)) != SUCCESS) return result;
 
 		if (anyMatch)
 		{
@@ -79,7 +87,14 @@ int	arguments_c::Process(int argc, pc_t argv[], arguments_c &arguments)
 		arguments.Continous = false;
 	}
 
-	if (arguments.Port <= 0) return ERROR_INVALIDARGUMENTS;
+	// Logic for ICMP Mode
+#ifdef WIN32
+	if (arguments.Port <= 0)
+	{
+		arguments.UseICMP = true;
+	}
+#endif
+	
 	if (arguments.Timeout <= 0) return ERROR_INVALIDARGUMENTS;
 	if (!gotDestination) return ERROR_INVALIDARGUMENTS;
 

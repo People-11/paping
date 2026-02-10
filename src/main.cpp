@@ -32,6 +32,10 @@ int main(int argc, pc_t argv[])
 	stats.Maximum	= 0.0;
 	stats.Total		= 0.0;
 
+#ifdef WIN32
+	timeBeginPeriod(1);
+#endif
+
 	arguments_c::PrintBanner();
 
 	result = arguments_c::Process(argc, argv, arguments);
@@ -48,7 +52,20 @@ int main(int argc, pc_t argv[])
 
 	if (result == SUCCESS)
 	{
-		socket_c::SetPortAndType(arguments.Port, arguments.Type, host);
+		bool setPort = true;
+#ifdef WIN32
+		// If ICMP is used, set type to ICMP
+		if (arguments.UseICMP)
+		{
+			host.Type = IPPROTO_ICMP;
+			host.Port = 0;
+			setPort = false;
+		}
+#endif
+		if (setPort)
+		{
+			socket_c::SetPortAndType(arguments.Port, arguments.Type, host);
+		}
 
 		if (result != SUCCESS)
 		{
@@ -79,7 +96,16 @@ int main(int argc, pc_t argv[])
 
 	while (arguments.Continous || i < (unsigned int)arguments.Count)
 	{
-		result = socket_c::Connect(host, arguments.Timeout, time);
+#ifdef WIN32
+		if (host.Type == IPPROTO_ICMP)
+		{
+			result = icmp_c::Ping(host, arguments.Timeout, time);
+		}
+		else
+#endif
+		{
+			result = socket_c::Connect(host, arguments.Timeout, time);
+		}
 
 		stats.Attempts++;
 
@@ -93,23 +119,35 @@ int main(int argc, pc_t argv[])
 		}
 		else
 		{
+			// For ICMP, exitCode might depend on error type, but keep consistent for failure
 			exitCode = 1;
 			stats.Failures++;
 
 			printFailedConnection(result);
 		}
 
-		#ifdef WIN32	// Windows cannot sleep to that accuracy (I think!)
-			if ((int)time < 1000) Sleep((1000 - (int)time));
-		#else
-			if ((int)time < 1000) usleep((1000 - (int)time) * 1000);
-		#endif
+		// Interval logic: arguments.Interval is in milliseconds (int)
+		// We need to wait: Interval - time (ms)
+		double waitTimeMs = (double)arguments.Interval - time;
+
+		if (waitTimeMs > 0)
+		{
+			#ifdef WIN32
+				Sleep((DWORD)ceil(waitTimeMs));
+			#else
+				usleep((useconds_t)(waitTimeMs * 1000));
+			#endif
+		}
 
 		i++;
 	}
 
 
 	printStats();	
+
+#ifdef WIN32
+	timeEndPeriod(1);
+#endif
 
 	return exitCode;
 }
@@ -140,18 +178,7 @@ void printError(int error)
 
 int printConnectInfo(host_c host)
 {
-	int		length	= 0;
-
-	length = host.GetConnectInfoString(NULL);
-
-	// pc_t	info	= new (nothrow) char[length + 1];
-	pc_t info = (pc_t)malloc(length + 1);
-
-	if (info == 0)
-	{
-		info = NULL;
-		return ERROR_POUTOFMEMORY;
-	}
+	char	info[256];
 
 	host.GetConnectInfoString(info);
 
@@ -160,9 +187,7 @@ int printConnectInfo(host_c host)
 	else
 		print_c::FormattedPrint(NULL, info);
 
-	printf("\n\n");
-
-	free(const_cast<char*>(info));
+	printf("\n");
 
 	return SUCCESS;
 }
@@ -170,18 +195,7 @@ int printConnectInfo(host_c host)
 
 int printSuccessfulConnection(host_c host, double time)
 {
-	int		length	= 0;
-
-	length = host.GetSuccessfulConnectionString(NULL, time);
-
-	// pc_t	data	= new (nothrow) char[length + 1];
-	pc_t data = (pc_t)malloc(length + 1);
-
-	if (data == 0)
-	{
-		data = NULL;
-		return ERROR_POUTOFMEMORY;
-	}
+	char	data[256];
 
 	host.GetSuccessfulConnectionString(data, time);
 
@@ -192,26 +206,13 @@ int printSuccessfulConnection(host_c host, double time)
 
 	putchar('\n');
 
-	free(const_cast<char*>(data));
-
 	return SUCCESS;
 }
 
 
 int printStats()
 {
-	int	length = 0;
-
-	length = stats.GetStatisticsString(NULL);
-
-	// pc_t	str	= new (nothrow) char[length + 1];
-	pc_t str = (pc_t)malloc(length + 1);
-
-	if (str == 0)
-	{
-		str = NULL;
-		return ERROR_POUTOFMEMORY;
-	}
+	char	str[1024];
 
 	stats.GetStatisticsString(str);
 
@@ -221,8 +222,6 @@ int printStats()
 		print_c::FormattedPrint(NULL, str);
 
 	putchar('\n');
-
-	free(const_cast<char*>(str));
 
 	return SUCCESS;
 }

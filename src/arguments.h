@@ -9,8 +9,12 @@ class arguments_c
 		int		Type;
 		int		Timeout;
 		int		Count;
+		int		Interval;
 		bool	Continous;
 		bool	UseColor;
+#ifdef WIN32
+		bool	UseICMP;
+#endif
 
 		static	void	PrintBanner();
 		static	void	PrintUsage();
