@@ -6,90 +6,113 @@
 
 pcc_t host_c::IPAddressString()
 {
-	return host_c::GetIPAddressAsString(this->IPAddress);
+	return inet_ntoa(this->IPAddress);
 }
 
 
-int	host_c::GetSuccessfulConnectionString(pcc_t str, double time)
+void host_c::PrintSuccessfulConnection(double time, bool useColor)
 {
-	int		length	= 0;
-	pcc_t	format	= i18n_c::GetString(STRING_CONNECT_SUCCESS);
+	char buffer[64];
 	
 	if (this->Type == IPPROTO_ICMP)
 	{
-		// Hack to reuse string but ignore port part if we wanted, but the string has 4 placeholders.
-		// We should probably add a new string resource or just format it manually here for simplicity/minimal changes.
-		// The original string is: "Connected to $%s$: time=$%.2fms$ protocol=$%s$ port=$%d$"
-		// We can just pass 0 as port, but user wants clean output. 
-		// Let's manually format for ICMP to avoid changing i18n.h/cpp too much or misusing the string.
+		print_c::Write("Connected to ");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		print_c::Write(this->IPAddressString());
+		if (useColor) print_c::ResetColor();
 		
-		const char* icmpFormat = "Connected to %s: time=%.2fms protocol=%s";
-		// Note: The original uses custom print format with $ colors. 
-		// "Connected to $%s$: time=$%.2fms$ protocol=$%s$"
+		print_c::Write(": time=");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		snprintf(buffer, sizeof(buffer), "%.2fms", time);
+		print_c::Write(buffer);
+		if (useColor) print_c::ResetColor();
 		
-		const char* icmpFormatColored = "Connected to $%s$: time=$%.2fms$ protocol=$%s$";
-
-		length = snprintf(NULL, 0, icmpFormatColored, this->IPAddressString(), time, socket_c::GetFriendlyTypeName(this->Type));
-		if (str != NULL) sprintf((pc_t)str, icmpFormatColored, this->IPAddressString(), time, socket_c::GetFriendlyTypeName(this->Type));
+		print_c::Write(" protocol=");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		print_c::Write(socket_c::GetFriendlyTypeName(this->Type));
+		if (useColor) print_c::ResetColor();
 	}
 	else
 	{
-		length = snprintf(NULL, 0, format, this->IPAddressString(), time, socket_c::GetFriendlyTypeName(this->Type), this->Port);
-		if (str != NULL) sprintf((pc_t)str, format, this->IPAddressString(), time, socket_c::GetFriendlyTypeName(this->Type), this->Port);
+		print_c::Write("Connected to ");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		print_c::Write(this->IPAddressString());
+		if (useColor) print_c::ResetColor();
+		
+		print_c::Write(": time=");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		snprintf(buffer, sizeof(buffer), "%.2fms", time);
+		print_c::Write(buffer);
+		if (useColor) print_c::ResetColor();
+		
+		print_c::Write(" protocol=");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		print_c::Write(socket_c::GetFriendlyTypeName(this->Type));
+		if (useColor) print_c::ResetColor();
+		
+		print_c::Write(" port=");
+		if (useColor) print_c::SetColor(PRINT_COLOR_GREEN);
+		snprintf(buffer, sizeof(buffer), "%d", this->Port);
+		print_c::Write(buffer);
+		if (useColor) print_c::ResetColor();
 	}
-	
-	return length;
 }
 
-
-int host_c::GetConnectInfoString(pcc_t str)
+void host_c::PrintConnectInfo(bool useColor)
 {
-	int		length	= 0;
-	pcc_t	format	= NULL;
-	
-	// Manual format for ICMP to avoid port
+	char buffer[16];
+
 #ifdef WIN32
 	if (this->Type == IPPROTO_ICMP)
 	{
-		if (this->HostIsIP)
+		print_c::Write("Connecting to ");
+		if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+		print_c::Write(this->Hostname);
+		if (useColor) print_c::ResetColor();
+		
+		if (!this->HostIsIP)
 		{
-			// "Connecting to $%s$ on $%s %d$:" -> "Connecting to $%s$ on $%s$:"
-			const char* fmt = "Connecting to $%s$ on $%s$:";
-			length = snprintf(NULL, 0, fmt, this->Hostname, socket_c::GetFriendlyTypeName(this->Type));
-			if (str != NULL) sprintf((pc_t)str, fmt, this->Hostname, socket_c::GetFriendlyTypeName(this->Type));
+			print_c::Write(" [");
+			if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+			print_c::Write(this->IPAddressString());
+			if (useColor) print_c::ResetColor();
+			print_c::Write("]");
 		}
-		else
-		{
-			// "Connecting to $%s$ [$%s$] on $%s %d$:" -> "Connecting to $%s$ [$%s$] on $%s$:"
-			const char* fmt = "Connecting to $%s$ [$%s$] on $%s$:";
-			length = snprintf(NULL, 0, fmt, this->Hostname, this->IPAddressString(), socket_c::GetFriendlyTypeName(this->Type));
-			if (str != NULL) sprintf((pc_t)str, fmt, this->Hostname, this->IPAddressString(), socket_c::GetFriendlyTypeName(this->Type));
-		}
-		return length;
+
+		print_c::Write(" on ");
+		if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+		print_c::Write(socket_c::GetFriendlyTypeName(this->Type));
+		if (useColor) print_c::ResetColor();
+		print_c::Write(":");
+		return;
 	}
 #endif
 
-	if (this->HostIsIP)
-	{
-		format = i18n_c::GetString(STRING_CONNECT_INFO_IP);
+	print_c::Write("Connecting to ");
+	if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+	print_c::Write(this->Hostname);
+	if (useColor) print_c::ResetColor();
 
-		length = snprintf(NULL, 0, format, this->Hostname, socket_c::GetFriendlyTypeName(this->Type), this->Port);
-		if (str != NULL) sprintf((pc_t)str, format, this->Hostname, socket_c::GetFriendlyTypeName(this->Type), this->Port);
-	}
-	else
+	if (!this->HostIsIP)
 	{
-		format = i18n_c::GetString(STRING_CONNECT_INFO_FULL);
-		
-		length = snprintf(NULL, 0, format, this->Hostname, this->IPAddressString(), socket_c::GetFriendlyTypeName(this->Type), this->Port);
-		if (str != NULL) sprintf((pc_t)str, format, this->Hostname, this->IPAddressString(), socket_c::GetFriendlyTypeName(this->Type), this->Port);
+		print_c::Write(" [");
+		if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+		print_c::Write(this->IPAddressString());
+		if (useColor) print_c::ResetColor();
+		print_c::Write("]");
 	}
+
+	print_c::Write(" on ");
+	if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+	print_c::Write(socket_c::GetFriendlyTypeName(this->Type));
+	if (useColor) print_c::ResetColor();
 	
-	
-	return length;
+	print_c::Write(" ");
+	if (useColor) print_c::SetColor(PRINT_COLOR_YELLOW);
+	snprintf(buffer, sizeof(buffer), "%d", this->Port);
+	print_c::Write(buffer);
+	if (useColor) print_c::ResetColor();
+	print_c::Write(":");
 }
 
 
-pcc_t host_c::GetIPAddressAsString(in_addr ipAddress)
-{
-	return inet_ntoa(ipAddress);
-}

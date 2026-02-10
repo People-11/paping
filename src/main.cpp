@@ -15,6 +15,7 @@ void signalHandler(int id);
 bool	useColor	= false;
 int		exitCode	= 0;
 stats_c	stats;
+volatile bool g_running = true;
 
 
 
@@ -34,6 +35,9 @@ int main(int argc, pc_t argv[])
 
 #ifdef WIN32
 	timeBeginPeriod(1);
+	print_c::Initialize();
+	// Enable standard Ctrl+C handling to trigger SIGINT
+	SetConsoleCtrlHandler(NULL, FALSE);
 #endif
 
 	arguments_c::PrintBanner();
@@ -94,7 +98,7 @@ int main(int argc, pc_t argv[])
 
 	double			time	= 0.0;
 
-	while (arguments.Continous || i < (unsigned int)arguments.Count)
+	while ((arguments.Continous || i < (unsigned int)arguments.Count) && g_running)
 	{
 #ifdef WIN32
 		if (host.Type == IPPROTO_ICMP)
@@ -158,8 +162,7 @@ void signalHandler(int id)
 	switch (id)
 	{
 		case SIGINT:
-			printStats();
-			exit(exitCode);
+			g_running = false;
 			return;
 	}
 }
@@ -167,45 +170,33 @@ void signalHandler(int id)
 
 void printError(int error)
 {
+	print_c::Lock();
 	if (useColor)
 		print_c::FormattedPrint(PRINT_COLOR_RED, i18n_c::GetString(error));
 	else
 		print_c::FormattedPrint(NULL, i18n_c::GetString(error));
 
 	putchar('\n');
+	print_c::Unlock();
 }
 
 
 int printConnectInfo(host_c host)
 {
-	char	info[256];
-
-	host.GetConnectInfoString(info);
-
-	if (useColor)
-		print_c::FormattedPrint(PRINT_COLOR_YELLOW, info);
-	else
-		print_c::FormattedPrint(NULL, info);
-
-	printf("\n");
-
+	print_c::Lock();
+	host.PrintConnectInfo(useColor);
+	print_c::Write("\n");
+	print_c::Unlock();
 	return SUCCESS;
 }
 
 
 int printSuccessfulConnection(host_c host, double time)
 {
-	char	data[256];
-
-	host.GetSuccessfulConnectionString(data, time);
-
-	if (useColor)
-		print_c::FormattedPrint(PRINT_COLOR_GREEN, data);
-	else
-		print_c::FormattedPrint(NULL, data);
-
-	putchar('\n');
-
+	print_c::Lock();
+	host.PrintSuccessfulConnection(time, useColor);
+	print_c::Write("\n");
+	print_c::Unlock();
 	return SUCCESS;
 }
 
@@ -229,12 +220,14 @@ int printStats()
 
 int printFailedConnection(int error)
 {
+	print_c::Lock();
 	if (useColor)
 		print_c::FormattedPrint(PRINT_COLOR_RED, i18n_c::GetString(error));
 	else
 		print_c::FormattedPrint(NULL, i18n_c::GetString(error));
 
 	putchar('\n');
+	print_c::Unlock();
 
 	return SUCCESS;
 }

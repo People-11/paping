@@ -25,13 +25,16 @@ struct slice_s
 
 class print_c
 {
-	private:
-		static int initialColors_;
-
 	public:
+		static	int		initialColors_;
 		static	bool	UseColor;
-		
-		static void FormattedPrint(int color, pcc_t data);
+
+		static	void	Initialize();
+		static	void	Lock();
+		static	void	Unlock();
+
+		static	void	FormattedPrint(int color, pcc_t data);
+		static	void	Write(pcc_t data); // Direct write optimization
 		static void SetColor(int color);
 		static void ResetColor();
 };

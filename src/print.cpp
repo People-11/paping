@@ -115,11 +115,58 @@ void print_c::SetColor(int color)
 void  print_c::ResetColor()
 {
 	#ifdef _WIN32
-	if (print_c::initialColors_ != NULL)
+	if (print_c::initialColors_ != 0)
 	{
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), print_c::initialColors_);
 	}
 	#else
 	printf("\033[22;%dm", 0);
 	#endif
+}
+
+#ifdef WIN32
+CRITICAL_SECTION consoleLock;
+bool initialized = false;
+#endif
+
+void print_c::Initialize()
+{
+#ifdef WIN32
+	if (!initialized)
+	{
+		InitializeCriticalSection(&consoleLock);
+		initialized = true;
+	}
+#endif
+}
+
+void print_c::Lock()
+{
+#ifdef WIN32
+	if (initialized)
+	{
+		EnterCriticalSection(&consoleLock);
+	}
+#endif
+}
+
+void print_c::Unlock()
+{
+#ifdef WIN32
+	if (initialized)
+	{
+		LeaveCriticalSection(&consoleLock);
+	}
+#endif
+}
+
+void print_c::Write(pcc_t data)
+{
+#ifdef _WIN32
+	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD written;
+	WriteConsoleA(console, data, (DWORD)strlen(data), &written, NULL);
+#else
+	printf("%s", data);
+#endif
 }

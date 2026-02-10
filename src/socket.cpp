@@ -4,25 +4,52 @@
 
 int socket_c::Resolve(pcc_t hostname, host_c &host)
 {
-	hostent*	remoteHost	= NULL;
-
 	#ifdef WIN32	// Init Winsock in Windows
 		WSADATA	wsaData;
 		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return ERROR_SOCKET_GENERALFAILURE;
 	#endif
 
-	remoteHost = gethostbyname(hostname);
+	struct hostent* he;
+
+	// Try to treat as IP first for optimization
+	unsigned long ip = inet_addr(hostname);
+
+	if (ip != INADDR_NONE)
+	{
+		host.IPAddress.s_addr = ip;
+		host.Type = IPPROTO_TCP; // Default, will be updated later
+		strncpy(host.Hostname, hostname, sizeof(host.Hostname));
+	}
+	else
+	{
+		// Not an IP, try name resolution
+		if ((he = gethostbyname(hostname)) == NULL)
+		{
+			#ifdef WIN32
+				WSACleanup();
+			#endif
+			return ERROR_SOCKET_CANNOTRESOLVE;
+		}
+
+		host.IPAddress = *((struct in_addr*)he->h_addr);
+		
+		// Use the official name (h_name) as the hostname (CNAME)
+		// If h_name is empty (unlikely if success), fallback to input
+		if (he->h_name && strlen(he->h_name) > 0)
+			strncpy(host.Hostname, he->h_name, sizeof(host.Hostname) - 1);
+		else
+			strncpy(host.Hostname, hostname, sizeof(host.Hostname) - 1);
+	}
+	
+	host.Hostname[sizeof(host.Hostname) - 1] = '\0';
 
 	#ifdef WIN32	// Cleanup Winsock in Windows
 		WSACleanup();
 	#endif
 
-	if (remoteHost == NULL) return ERROR_SOCKET_CANNOTRESOLVE;
-
-	host.IPAddress	= *(in_addr*)remoteHost->h_addr_list[0];
-	host.Hostname	= remoteHost->h_name;
-
-	host.HostIsIP = !strcmp(hostname, host.Hostname);
+	const char* resolvedIP = inet_ntoa(host.IPAddress);
+	// Check if the input hostname is effectively the IP
+	host.HostIsIP = (strcmp(hostname, resolvedIP) == 0);
 
 	return SUCCESS;
 }
@@ -81,6 +108,13 @@ int socket_c::Connect(host_c host, int timeout, double &time)
 	clientSocket = socket(AF_INET, socket_c::GetSocketType(host.Type), host.Type);
 
 	if (clientSocket == -1) return ERROR_SOCKET_GENERALFAILURE;
+
+	// Enable SO_LINGER with 0 timeout to force RST on close
+	// This avoids TIME_WAIT state, allowing immediate port reuse for high-frequency pings
+	struct linger l;
+	l.l_onoff = 1;
+	l.l_linger = 0;
+	setsockopt(clientSocket, SOL_SOCKET, SO_LINGER, (const char*)&l, sizeof(l));
 
 	sockaddr_in	clientAddress;
 
