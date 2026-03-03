@@ -179,7 +179,7 @@ void printError(int error)
 	if (useColor)
 		print_c::FormattedPrint(PRINT_COLOR_RED, i18n_c::GetString(error));
 	else
-		print_c::FormattedPrint(NULL, i18n_c::GetString(error));
+		print_c::FormattedPrint(0, i18n_c::GetString(error));
 
 	putchar('\n');
 	print_c::Unlock();
@@ -215,7 +215,7 @@ int printStats()
 	if (useColor)
 		print_c::FormattedPrint(PRINT_COLOR_BLUE, str);
 	else
-		print_c::FormattedPrint(NULL, str);
+		print_c::FormattedPrint(0, str);
 
 	putchar('\n');
 
@@ -229,7 +229,7 @@ int printFailedConnection(int error)
 	if (useColor)
 		print_c::FormattedPrint(PRINT_COLOR_RED, i18n_c::GetString(error));
 	else
-		print_c::FormattedPrint(NULL, i18n_c::GetString(error));
+		print_c::FormattedPrint(0, i18n_c::GetString(error));
 
 	putchar('\n');
 	print_c::Unlock();

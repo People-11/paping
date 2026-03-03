@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
 	#define WIN32_LEAN_AND_MEAN
 	#define _CRT_SECURE_NO_WARNINGS 1
 	#pragma comment(lib, "ws2_32.lib")
@@ -26,9 +26,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#ifdef WIN32	// Windows specific
-	#include <Windows.h>
-	#include <WinSock2.h>
+#if defined(WIN32) || defined(_WIN32)	// Windows specific
+	#include <windows.h>
+	#include <winsock2.h>
 	#include <time.h>
 	#include <mmsystem.h>
 	#include "gettimeofday.h"
@@ -46,7 +46,7 @@
 #include <fcntl.h>
 
 // Windows compatibility macros (after including system headers)
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
 	#define close	closesocket
 	#define snprintf _snprintf
 #endif

@@ -1,7 +1,6 @@
 #include "standard.h"
 
 
-using namespace std;
 
 #ifdef _WIN32
 	#define	PRINT_COLOR_BLUE	FOREGROUND_BLUE		|	FOREGROUND_GREEN		|	FOREGROUND_INTENSITY

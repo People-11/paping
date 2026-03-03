@@ -1,0 +1,38 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build Win64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-mingw-w64 upx-ucl
+
+      - name: Compile Minimal Binary
+        run: |
+          x86_64-w64-mingw32-gcc ./src/*.cpp -o paping.exe -lws2_32 -lwinmm -liphlpapi \
+            -Os -s -static -fno-exceptions -fno-rtti -fno-ident \
+            -ffunction-sections -fdata-sections -Wl,--gc-sections \
+            -fno-asynchronous-unwind-tables -fno-unwind-tables
+          upx --lzma --ultra-brute paping.exe || true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: paping.exe
+          path: paping.exe
