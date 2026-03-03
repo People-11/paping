@@ -7,6 +7,8 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
+extern volatile bool g_running;
+
 int icmp_c::Ping(host_c host, int timeout, double &time)
 {
 #ifdef WIN32
@@ -31,33 +33,47 @@ int icmp_c::Ping(host_c host, int timeout, double &time)
 		return ERROR_POUTOFMEMORY;
 	}
 
+	HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (hEvent == NULL) {
+		free(ReplyBuffer);
+		IcmpCloseHandle(hIcmpFile);
+		return ERROR_SOCKET_GENERALFAILURE;
+	}
+
 	timer_c timer;
 	timer.Start();
 
-	dwRetVal = IcmpSendEcho(hIcmpFile, ipaddr, SendData, sizeof(SendData),
+	IcmpSendEcho2(hIcmpFile, hEvent, NULL, NULL, ipaddr, SendData, sizeof(SendData),
 		NULL, ReplyBuffer, ReplySize, timeout);
+
+	const int sliceMs = 100;
+	int remainMs = timeout + sliceMs; // give a little extra for reply processing
+	dwRetVal = 0;
+	while (remainMs > 0 && g_running)
+	{
+		int waitMs = (remainMs < sliceMs) ? remainMs : sliceMs;
+		DWORD waitResult = WaitForSingleObject(hEvent, (DWORD)waitMs);
+		if (waitResult == WAIT_OBJECT_0)
+		{
+			dwRetVal = IcmpParseReplies(ReplyBuffer, ReplySize);
+			break;
+		}
+		remainMs -= waitMs;
+	}
 
 	time = timer.Stop();
 
+	CloseHandle(hEvent);
+
 	if (dwRetVal != 0) {
 		PICMP_ECHO_REPLY pEchoReply = (PICMP_ECHO_REPLY)ReplyBuffer;
-		// Use the round trip time from ICMP reply if available and non-zero, 
-		// otherwise use our timer. ICMP RTT is in ms (integer).
-		if (pEchoReply->Status == IP_SUCCESS) {
-			// Prefer high-precision timer, but RTT is a good fallback
-			// time = (double)pEchoReply->RoundTripTime; 
-            // Stick to high-precision timer for better <1ms resolution if possible, 
-            // but IcmpSendEcho is synchronous, so timer wraps the call.
-		}
-		else {
+		if (pEchoReply->Status != IP_SUCCESS) {
 			free(ReplyBuffer);
 			IcmpCloseHandle(hIcmpFile);
-			return ERROR_SOCKET_TIMEOUT; // Or more specific error mapping
+			return ERROR_SOCKET_TIMEOUT;
 		}
 	}
 	else {
-		// DWORD err = GetLastError();
-		// Map errors if needed: IP_REQ_TIMED_OUT, etc.
 		free(ReplyBuffer);
 		IcmpCloseHandle(hIcmpFile);
 		return ERROR_SOCKET_TIMEOUT;
@@ -69,6 +85,7 @@ int icmp_c::Ping(host_c host, int timeout, double &time)
 
 #else
 	// Linux/Unix implementation would go here (requires raw sockets)
-	return ERROR_SOCKET_GENERALFAILURE; 
+	return ERROR_SOCKET_GENERALFAILURE;
 #endif
 }
+

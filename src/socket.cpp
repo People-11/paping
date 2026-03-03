@@ -2,6 +2,8 @@
 
 // using namespace std; // Removed iostream dependency
 
+extern volatile bool g_running;
+
 int socket_c::Resolve(pcc_t hostname, host_c &host)
 {
 	#ifdef WIN32	// Init Winsock in Windows
@@ -134,25 +136,36 @@ int socket_c::Connect(host_c host, int timeout, double &time)
 	#endif
 
 
-	tv.tv_sec 	= 0;
-	tv.tv_usec	= timeout * 1000;
-
 	timer_c	timer;
 
-	timer.Start();		
+	timer.Start();
 
 	connect(clientSocket, (sockaddr*)&clientAddress, sizeof(clientAddress));
 
 	fd_set	read, write;
 
-	FD_ZERO(&read);
-	FD_ZERO(&write);
+	const int sliceUs = 100000; // 100ms in microseconds
+	int remainUs = timeout * 1000;
 
-	FD_SET(clientSocket, &read);
-	FD_SET(clientSocket, &write);
-	
-	result = select(clientSocket + 1, &read, &write, NULL, &tv);
-	
+	result = 0;
+	while (remainUs > 0 && g_running)
+	{
+		FD_ZERO(&read);
+		FD_ZERO(&write);
+		FD_SET(clientSocket, &read);
+		FD_SET(clientSocket, &write);
+
+		int waitUs = (remainUs < sliceUs) ? remainUs : sliceUs;
+		tv.tv_sec  = 0;
+		tv.tv_usec = waitUs;
+
+		result = select(clientSocket + 1, &read, &write, NULL, &tv);
+		if (result != 0)
+			break;
+
+		remainUs -= waitUs;
+	}
+
 	if (result != 1)
 	{
 		close(clientSocket);

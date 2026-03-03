@@ -130,17 +130,22 @@ int main(int argc, pc_t argv[])
 			printFailedConnection(result);
 		}
 
-		// Interval logic: arguments.Interval is in milliseconds (int)
-		// We need to wait: Interval - time (ms)
 		double waitTimeMs = (double)arguments.Interval - time;
 
 		if (waitTimeMs > 0)
 		{
-			#ifdef WIN32
-				Sleep((DWORD)ceil(waitTimeMs));
-			#else
-				usleep((useconds_t)(waitTimeMs * 1000));
-			#endif
+			const int sliceMs = 100;
+			int remainMs = (int)ceil(waitTimeMs);
+			while (remainMs > 0 && g_running)
+			{
+				int doMs = (remainMs < sliceMs) ? remainMs : sliceMs;
+				#ifdef WIN32
+					Sleep((DWORD)doMs);
+				#else
+					usleep((useconds_t)(doMs * 1000));
+				#endif
+				remainMs -= doMs;
+			}
 		}
 
 		i++;
